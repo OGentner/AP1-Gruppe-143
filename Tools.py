@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import sympy as sp
 
 plt.rcParams.update({
     "text.usetex": True,
@@ -65,6 +66,30 @@ print(makeLaTexTable(test, [r"$b$ (cm)", r"$\theta$", r"$s_\theta$"], "Streuwink
 
     return latex
 
+def gauss_error(f, variables, errors):
+    """
+    Gaußsche Fehlerfortpflanzung:
+    
+    f         : Funktion/Ausdruck
+    variables : Liste der Variablen [x, y, ...]
+    errors    : Liste der Unsicherheiten [dx, dy, ...]
+    """
+    sigma = 0
+
+    for var, error in zip(variables, errors):
+        sigma += (sp.diff(f, var) * error)**2
+
+    return sp.sqrt(sigma)
+
+s, T0 = sp.symbols('s T0')
+g = 4*s*sp.pi**2/T0**2
+dg = gauss_error(
+    g,
+    [s, T0],
+    [sp.Symbol('ds'), sp.Symbol('dT0')]
+)
+
+print(dg)
 
 
 # fig, ax = plt.subplots(dpi=600)
