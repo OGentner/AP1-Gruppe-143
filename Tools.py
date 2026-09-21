@@ -95,6 +95,13 @@ def gauss_error_values(f, variables, values, errors):
     for var, err in zip(variables, errors):
         derivative = sp.diff(f, var)
         error += (derivative.subs(substitutions) * err)**2
+        print((derivative.subs(substitutions) * err)**2)
+
+    # error_tex = 0
+    # for var, err in zip(variables, errors):
+    #     derivative = sp.diff(f, var)
+    #     error_tex += (derivative*err)**2
+    # print(sp.latex((error_tex)))
 
     error_value = float(sp.sqrt(error))
 
@@ -110,7 +117,7 @@ def zTest(Bestwert:float, Literaturwert:float, Standardunsicherheit:float, LaTex
     if LaTexAusgabe:
         if z > 2:
             print(f"Da $z = \left|\\frac{{\hat x-y}}{{\Delta x}}\\right| = \left|\\frac{{ {Bestwert:.2f} - {Literaturwert:.2f}}}{{{Standardunsicherheit:.2f}}} \\right| = {z:.2f} > 2$, weicht unser Ergebnis Signifikant vom Literaturwert ab.")
-        else: print(f"Da $z = \left|\\frac{{\hat x-y}}{{\Delta x}}\\right| = \left|\\frac{{ {Bestwert:.2f} - {Literaturwert:.2f}}}{{{Standardunsicherheit:.2f}}}\\right| = {z:.2f} <= 2$, ist unser Ergebniss mit dem Literaturwert (${Literaturwert:.2f}$) kompatibel.")
+        else: print(f"Da $z = \left|\\frac{{\hat x-y}}{{\Delta x}}\\right| = \left|\\frac{{ {Bestwert:.2f} - {Literaturwert:.2f}}}{{{Standardunsicherheit:.2f}}}\\right| = {z:.2f} <= 2$, ist unser Ergebnis mit dem Literaturwert (${Literaturwert:.2f}$) kompatibel.")
     return z
 
 
@@ -178,7 +185,7 @@ d1 = gauss_error_values(
     [m1[1], V1[1]*1e-9])
 print(d1)
 
-zTest(d1[0], 12450, d1[1], LaTexAusgabe=True)
+# zTest(d1[0], 12450, d1[1], LaTexAusgabe=True)
 
 print("Dichte 2:", end=" ")
 m, v = sp.symbols('m v')
@@ -188,7 +195,7 @@ d2 = gauss_error_values(
     [m, v],
     [m2[0], V2[0]*1e-9],
     [m2[1], V2[1]*1e-9])
-print(d1)
+print(d2)
 
 
 
