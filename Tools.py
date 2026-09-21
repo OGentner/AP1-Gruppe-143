@@ -1,3 +1,6 @@
+# todo 
+# latext ausgabe vom fehler und nur eine gute Funktion machen
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -97,6 +100,20 @@ def gauss_error_values(f, variables, values, errors):
 
     return f_value, error_value
 
+def zTest(Bestwert:float, Literaturwert:float, Standardunsicherheit:float, LaTexAusgabe=False):
+    """
+    Berechnet den z-Wert für die gegebenen Werte.
+    Ausgabe hat keine Einheiten :(
+    """
+    z = abs((Bestwert - Literaturwert) / Standardunsicherheit)
+
+    if LaTexAusgabe:
+        if z > 2:
+            print(f"Da $z = \left|\\frac{{\hat x-y}}{{\Delta x}}\\right| = \left|\\frac{{ {Bestwert:.2f} - {Literaturwert:.2f}}}{{{Standardunsicherheit:.2f}}} \\right| = {z:.2f} > 2$, weicht unser Ergebnis Signifikant vom Literaturwert ab.")
+        else: print(f"Da $z = \left|\\frac{{\hat x-y}}{{\Delta x}}\\right| = \left|\\frac{{ {Bestwert:.2f} - {Literaturwert:.2f}}}{{{Standardunsicherheit:.2f}}}\\right| = {z:.2f} <= 2$, ist unser Ergebniss mit dem Literaturwert (${Literaturwert:.2f}$) kompatibel.")
+    return z
+
+
 # s, T0 = sp.symbols('s T0')
 # g = 4*s*sp.pi**2/T0**2
 # dg = gauss_error(
@@ -111,12 +128,69 @@ def gauss_error_values(f, variables, values, errors):
 print("Volumen 1:", end=" ")
 h, k, d1, d2 = sp.symbols('h k d1 d2')
 V = h*k*(d1+d2)/2
-print(gauss_error_values(
+V1 = gauss_error_values(
     V,
     [h, k, d1, d2],
     [5.07, 23.04, 34.4, 34.95],
     [0.005, 0.005, 0.05, 0.05]
-))
+)
+print(V1)
+
+print("Volumen 2:", end=" ")
+r,d = sp.symbols('r d')
+V = sp.pi*(r**2)*0.5*d
+V2 = gauss_error_values(
+    V,
+    [r, d],
+    [22/2, 32],
+    [0.05, 0.05])
+print(V2)
+
+
+print("Masse 1:", end=" ")
+x, a, z = sp.symbols('x a z')
+m = (x - a)/z
+m1  = gauss_error_values(
+    m,
+    [x, a, z],
+    [0.246, 0, (400/82)],
+    [0.0003, 0.0005, 0.02])
+print(m1)
+
+print("Masse 2:", end=" ")
+x, a, z = sp.symbols('x a z')
+m = (x - a)/z
+m2 = gauss_error_values(
+    m,
+    [x, a, z],
+    [0.214, 0, (400/82)],
+    [0.0003, 0.0005, 0.02])
+print(m2)
+
+
+print("Dichte 1:", end=" ")
+m, v = sp.symbols('m v')
+d = m/v
+d1 = gauss_error_values(
+    d,
+    [m, v],
+    [m1[0], V1[0]*1e-9],
+    [m1[1], V1[1]*1e-9])
+print(d1)
+
+zTest(d1[0], 12450, d1[1], LaTexAusgabe=True)
+
+print("Dichte 2:", end=" ")
+m, v = sp.symbols('m v')
+d = m/v
+d2 = gauss_error_values(
+    d,
+    [m, v],
+    [m2[0], V2[0]*1e-9],
+    [m2[1], V2[1]*1e-9])
+print(d1)
+
+
 
 
 
