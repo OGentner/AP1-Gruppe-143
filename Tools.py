@@ -28,9 +28,9 @@ def lade_versuch(datei):
 
     return messdaten, parameter
 
-daten, parameter = lade_versuch(
-    "reversionspendel.xlsx"
-)
+# daten, parameter = lade_versuch(
+#     "reversionspendel.xlsx"
+# )
 
 # latex(1+2**(x+y)) #SymPy x, y müssen Type "symbols" sein
 # (Latex(r"$A = P(1 + r)^t$"))
@@ -81,15 +81,44 @@ def gauss_error(f, variables, errors):
 
     return sp.sqrt(sigma)
 
-s, T0 = sp.symbols('s T0')
-g = 4*s*sp.pi**2/T0**2
-dg = gauss_error(
-    g,
-    [s, T0],
-    [sp.Symbol('ds'), sp.Symbol('dT0')]
-)
+def gauss_error_values(f, variables, values, errors):
+    substitutions = dict(zip(variables, values))
 
-print(dg)
+    # Funktionswert
+    f_value = float(f.subs(substitutions))
+
+    # Gaußsche Fehlerfortpflanzung
+    error = 0
+    for var, err in zip(variables, errors):
+        derivative = sp.diff(f, var)
+        error += (derivative.subs(substitutions) * err)**2
+
+    error_value = float(sp.sqrt(error))
+
+    return f_value, error_value
+
+# s, T0 = sp.symbols('s T0')
+# g = 4*s*sp.pi**2/T0**2
+# dg = gauss_error(
+#     g,
+#     [s, T0],
+#     [sp.Symbol('ds'), sp.Symbol('dT0')]
+# )
+
+# print(dg)
+
+# Fehlerfortpflanzung Volumen
+print("Volumen 1:", end=" ")
+h, k, d1, d2 = sp.symbols('h k d1 d2')
+V = h*k*(d1+d2)/2
+print(gauss_error_values(
+    V,
+    [h, k, d1, d2],
+    [5.07, 23.04, 34.4, 34.95],
+    [0.005, 0.005, 0.05, 0.05]
+))
+
+
 
 
 # fig, ax = plt.subplots(dpi=600)
