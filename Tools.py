@@ -1,7 +1,3 @@
-# todo 
-# Residuen errechnen
-# Konfidenzbänder mitplotten
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -246,19 +242,10 @@ def plot_Diagramm(x_vals, y_vals, error, Title:str, x_label:str=None, y_label:st
     fig, ax = plt.subplots(dpi=600)
     ax.errorbar(x_vals, y_vals, error, fmt='.', linewidth=2, capsize=6)
     ax.set_title(Title)
-    ax.set_xlabel = x_label
-    ax.set_ylabel = y_label
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
     ax.grid()
     plt.show()
-
-def schnittpunkte_Geraden(f1, f2, var):
-    x_werte = sp.solve(sp.Eq(f1, f2), var)
-    schnittpunkte = [
-        (x_val, f1.subs(var, x_val))
-        for x_val in x_werte
-    ]
-    return schnittpunkte
-
 
 def Residuendiagramm_manuell(
     x_vals,
@@ -376,38 +363,3 @@ V1 = gauss_error_values(
     [0.005, 0.005, 0.05, 0.05],
     returnLaTex=True
 )
-
-
-
-
-
-def test_Residuendiagramm_manuell_negative_x():
-    """Testet das Residuendiagramm auch für negative x-Werte."""
-    x_vals = np.linspace(-5, 5, 21)
-
-    steigung = 20
-    verschiebung = 3.0
-    residuen = np.array([
-        -0.40, 0.20, -0.10, 0.35, -0.25,
-        0.15, 0.05, -0.30, 0.25, -0.05,
-        0.10, -0.20, 0.30, -0.15, 0.05,
-        -0.35, 0.20, -0.10, 0.25, -0.05,
-        0.15
-    ])
-    y_vals = steigung * x_vals + verschiebung + residuen
-
-    Residuendiagramm_manuell(
-        x_vals=x_vals,
-        y_vals=y_vals,
-        error=0.2,
-        Steigung=steigung,
-        Verschiebung=verschiebung,
-        Steigung_delta=0.2,
-        Verschiebung_delta=0.1,
-        zeige_grenzgeraden=False,
-        x_label="x [m]",
-        y_label="y [m]"
-    )
-
-
-test_Residuendiagramm_manuell_negative_x()
