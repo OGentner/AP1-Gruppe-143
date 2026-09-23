@@ -342,8 +342,9 @@ def Residuendiagramm_manuell(
 
     plt.show()
 
-# anwendung von lade_versuch
-if False:
+
+if __name__ == "__main__":
+    # anwendung von lade_versuch
     daten, parameter = lade_versuch(
         "reversionspendel.xlsx"
     )
@@ -352,14 +353,14 @@ if False:
         ["T1 [s]", "T2 [s]", "T3 [s]", "T4 [s]", "T5 [s]"]
     ].to_numpy()
 
-# Fehlerfortpflanzung 
-print("Fehler Gauss Test:")
-h, k, d1, d2 = sp.symbols('h k d_1 d_2')
-V = h*k*(d1+d2)/2
-V1 = gauss_error_values(
-    V,
-    [h, k, d1, d2],
-    [5.07, 23.04, 34.4, 34.95],
-    [0.005, 0.005, 0.05, 0.05],
-    returnLaTex=True
-)
+    # Fehlerfortpflanzung 
+    print("Fehler Gauss Test:")
+    h, k, d1, d2 = sp.symbols('h k d_1 d_2')
+    V = h*k*(d1+d2)/2
+    V1 = gauss_error_values(
+        V,
+        [h, k, d1, d2],
+        [5.07, 23.04, 34.4, 34.95],
+        [0.005, 0.005, 0.05, 0.05],
+        returnLaTex=True
+    )
