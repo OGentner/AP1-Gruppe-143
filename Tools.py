@@ -117,7 +117,7 @@ def gauss_error_values(
         # Ausgabe des einzelnen Fehlerterms
         print(
             f"Term von {var}: "
-            f"{error_term:}".replace(".", ",")
+            f"{error_term:.10g}".replace(".", ",")
         )
 
         # --------------------------------------------------
@@ -136,7 +136,11 @@ def gauss_error_values(
         # Term mit symbolisch berechneter Ableitung
         # --------------------------------------------------
 
-        derivative_latex = sp.latex(derivative)
+        rounded_derivative = derivative.xreplace({
+            number: sp.Float(round(float(number), 2))
+            for number in derivative.atoms(sp.Float)
+        })
+        derivative_latex = sp.latex(rounded_derivative)
 
         derivative_terms.append(
             rf"\left("
@@ -182,8 +186,8 @@ def gauss_error_values(
     # 5. Numerisches Ergebnis mit ±
     # --------------------------------------------------
 
-    value_latex = f"{f_value:.4f}".replace(".", ",")
-    error_latex = f"{error_value:.4f}".replace(".", ",")
+    value_latex = f"{f_value:.2f}".replace(".", ",")
+    error_latex = f"{error_value:.2f}".replace(".", ",")
 
     latex_result = (
         rf"{variable_name} = "
@@ -197,11 +201,11 @@ def gauss_error_values(
 
     print()
     print("1. Wert:")
-    print(f"{f_value:}".replace(".", ","))
+    print(f"{f_value:.2f}".replace(".", ","))
 
     print()
     print("2. Fehler:")
-    print(f"{error_value:}".replace(".", ","))
+    print(f"{error_value:.2f}".replace(".", ","))
 
     print()
     print("3. LaTeX-Formel:")
