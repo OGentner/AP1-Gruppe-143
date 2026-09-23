@@ -117,7 +117,7 @@ def gauss_error_values(
         # Ausgabe des einzelnen Fehlerterms
         print(
             f"Term von {var}: "
-            f"{error_term:.2f}".replace(".", ",")
+            f"{error_term:}".replace(".", ",")
         )
 
         # --------------------------------------------------
@@ -182,8 +182,8 @@ def gauss_error_values(
     # 5. Numerisches Ergebnis mit ±
     # --------------------------------------------------
 
-    value_latex = f"{f_value:.2f}".replace(".", ",")
-    error_latex = f"{error_value:.2f}".replace(".", ",")
+    value_latex = f"{f_value:.4f}".replace(".", ",")
+    error_latex = f"{error_value:.4f}".replace(".", ",")
 
     latex_result = (
         rf"{variable_name} = "
@@ -197,11 +197,11 @@ def gauss_error_values(
 
     print()
     print("1. Wert:")
-    print(f"{f_value:.2f}".replace(".", ","))
+    print(f"{f_value:}".replace(".", ","))
 
     print()
     print("2. Fehler:")
-    print(f"{error_value:.2f}".replace(".", ","))
+    print(f"{error_value:}".replace(".", ","))
 
     print()
     print("3. LaTeX-Formel:")
