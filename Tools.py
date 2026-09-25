@@ -264,14 +264,18 @@ def Residuendiagramm_manuell(
     y_label: str = None):
     """Erstellt ein Diagramm mit Konfidenzschlauch und ein Residuendiagramm."""
 
+    x_plot_min = 0.0
+    x_plot_max = float(np.max(x_vals))
+    x_plot = np.linspace(x_plot_min, x_plot_max, 500)
+
     gerade = (
-        Steigung * x_vals
+        Steigung * x_plot
         + Verschiebung
     )
 
     x_schwerpunkt = np.mean(x_vals)
     y_drehpunkt = Steigung * x_schwerpunkt + Verschiebung
-    x_relativ = x_vals - x_schwerpunkt
+    x_relativ = x_plot - x_schwerpunkt
 
     g1 = (Steigung - Steigung_delta) * x_relativ + y_drehpunkt
     g2 = Steigung * x_relativ + y_drehpunkt
@@ -303,14 +307,14 @@ def Residuendiagramm_manuell(
         markersize=4
     )
 
-    ax.plot(x_vals, gerade, linewidth=1, color="orange")
+    ax.plot(x_plot, gerade, linewidth=1, color="orange")
 
     if zeige_grenzgeraden:
         for grenze in (g1, g2_oben, g3, g1, g2_unten, g3):
-            ax.plot(x_vals, grenze, "--", linewidth=0.8)
+            ax.plot(x_plot, grenze, "--", linewidth=0.8)
 
     ax.fill_between(
-        x_vals,
+        x_plot,
         band_unten,
         band_oben,
         alpha=0.2
@@ -323,7 +327,7 @@ def Residuendiagramm_manuell(
 
     plt.show()
 
-    residuen = y_vals - gerade
+    residuen = y_vals - (Steigung * x_vals + Verschiebung)
 
     residuen_band_unten = band_unten - gerade
     residuen_band_oben = band_oben - gerade
@@ -333,7 +337,7 @@ def Residuendiagramm_manuell(
     ax.plot(x_vals, residuen, ".")
 
     ax.fill_between(
-        x_vals,
+        x_plot,
         residuen_band_unten,
         residuen_band_oben,
         alpha=0.2
@@ -341,8 +345,8 @@ def Residuendiagramm_manuell(
 
     ax.hlines(
         0,
-        x_vals[0],
-        x_vals[-1],
+        x_plot_min,
+        x_plot_max,
         color="orange",
         linewidth=1
     )
