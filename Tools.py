@@ -303,7 +303,7 @@ def Residuendiagramm_manuell(
         markersize=4
     )
 
-    ax.plot(x_vals, gerade)
+    ax.plot(x_vals, gerade, linewidth=1, color="orange")
 
     if zeige_grenzgeraden:
         for grenze in (g1, g2_oben, g3, g1, g2_unten, g3):
@@ -316,7 +316,7 @@ def Residuendiagramm_manuell(
         alpha=0.2
     )
 
-    ax.set_title("Ausgleichsgerade")
+    # ax.set_title("Ausgleichsgerade")
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.grid()
@@ -339,7 +339,15 @@ def Residuendiagramm_manuell(
         alpha=0.2
     )
 
-    ax.set_title("Residuen-Diagramm")
+    ax.hlines(
+        0,
+        x_vals[0],
+        x_vals[-1],
+        color="orange",
+        linewidth=1
+    )
+
+    # ax.set_title("Residuen-Diagramm")
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.grid()
