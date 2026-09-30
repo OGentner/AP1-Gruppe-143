@@ -53,6 +53,49 @@ print(makeLaTexTable(test, [r"$b$ (cm)", r"$\theta$", r"$s_\theta$"], "Streuwink
 
     return latex
 
+def generate_Table(Tabelle:pd.DataFrame, captionIN:str, labelIN:str):
+    # Probleme: \cdot 10^-1; , statt . ; Nachkommastellen chekcken, Title unten?
+    latex = Tabelle.to_latex(
+        index=False,
+        bold_rows=False,
+        escape=False,
+        float_format="{:.2e}".format,
+        decimal=',',
+        column_format=("l"*(len(Tabelle.columns.to_list()))), # L eft, C enter, R ight
+        header=Tabelle.columns.to_list(),
+        caption=captionIN,
+        label="tab:"+labelIN,
+        position="H"
+    )
+
+    for i in range(-12, 13):
+        if i < 0:
+            old_str = f"e{i:03d}"
+            new_str = f"$\cdot 10^{{{i}}}$"
+        elif i == 0: 
+            old_str = "e+00"
+            new_str = ""
+        elif i == 1:
+            old_str = "e+01"
+            new_str = "$\cdot 10$"
+        elif i > 1:
+            old_str = f"e{i:02d}"
+            new_str = f"$\, \cdot 10^{{{i}}}$"
+        latex = latex.replace(old_str, new_str)
+
+    return (latex)
+
+def gewichteter_Mittelwert(daten, fehler):
+    """Berechnet den gewichteten Mittelwert der gegebenen Arrays.
+    daten = np.array 
+    fehler = np.array
+    returns [Mittelwert, Fehler]"""
+    
+    w = 1/(fehler)**2
+    omega_bar_w = (np.sum(w*daten)) / (np.sum(w))
+    del_omega_bar_w = 1 / np.sqrt(np.sum(w))
+    return [omega_bar_w, del_omega_bar_w]
+
 def gauss_error_values(
     f,
     variables,
