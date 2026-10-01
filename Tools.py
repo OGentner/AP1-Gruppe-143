@@ -79,9 +79,15 @@ def generate_Table(Tabelle:pd.DataFrame, captionIN:str, labelIN:str):
             old_str = "e+01"
             new_str = "$\cdot 10$"
         elif i > 1:
-            old_str = f"e{i:02d}"
+            old_str = f"e+{i:02d}"
             new_str = f"$\, \cdot 10^{{{i}}}$"
         latex = latex.replace(old_str, new_str)
+
+    latex = latex.replace(r"\begin{table}[H]", r"\begin{table}[H]"+"\n"+r"\centering")
+    latex = latex.replace(r"\toprule", r"\hline")
+    latex = latex.replace(r"\midrule", r"\hline")
+    latex = latex.replace(r"\bottomrule", r"\hline")
+
 
     return (latex)
 
@@ -297,7 +303,8 @@ def plot_Diagramm(x_vals, y_vals, error, Title:str, x_label:str=None, y_label:st
 def Residuendiagramm_manuell(
     x_vals,
     y_vals,
-    error,
+    xerr,
+    yerr,
     Steigung: float,
     Verschiebung: float,
     Steigung_delta: float = 0,
@@ -343,7 +350,8 @@ def Residuendiagramm_manuell(
     ax.errorbar(
         x_vals,
         y_vals,
-        yerr=error,
+        xerr=xerr,
+        yerr=yerr,
         fmt=".",
         linewidth=1,
         capsize=4,
