@@ -118,13 +118,74 @@ def gauss_error_values(
 ):
     """Berechnet die Gaußsche Fehlerfortpflanzung erster Ordnung.
 
-    ``variables``, ``values`` und ``errors`` müssen gleich lang und in derselben
-    Reihenfolge angegeben werden. Ohne ``correlation_matrix`` werden unabhängige
-    Eingangsgrößen angenommen.
+    Die Funktion wertet den sympy-Ausdruck ``f`` an den Messwerten aus und
+    bestimmt die Standardunsicherheit mit den partiellen Ableitungen:
 
-    Die numerischen Rückgabewerte sind ungerundet. Die LaTeX-Ausgabe rundet die
-    Unsicherheit auf eine signifikante Stelle (bei führender 1 oder 2 auf zwei)
-    und den Wert auf dieselbe Nachkommastelle.
+    * Ohne ``correlation_matrix`` werden unkorrelierte Eingangsgrößen
+      angenommen und die Fehlerbeiträge quadratisch addiert.
+    * Mit ``correlation_matrix`` wird die vollständige Kovarianzfortpflanzung
+      verwendet. Die Matrix muss eine symmetrische, positiv semidefinite
+      Korrelationsmatrix mit Einsen auf der Diagonale sein.
+
+    ``variables``, ``values`` und ``errors`` müssen gleich lang und in
+    derselben Reihenfolge angegeben werden. ``errors`` enthält nichtnegative
+    Standardunsicherheiten (1 sigma); ``values`` und ``errors`` müssen endlich
+    und reell sein. Alle Symbole im Ausdruck müssen in ``variables`` enthalten
+    sein.
+
+    Args:
+        f: Auswertbarer sympy-Ausdruck oder ein von ``sympy.sympify``
+            unterstützter Ausdruck.
+        variables: Sympy-Symbole, nach denen abgeleitet wird.
+        values: Messwerte in derselben Reihenfolge wie ``variables``.
+        errors: Standardunsicherheiten zu den Messwerten.
+        eqLabel: Optionales LaTeX-Gleichungslabel ohne ``eq:``-Präfix.
+        variable_name: Bezeichnung der Ergebnisgröße in der Ausgabe.
+        unit: Einheit, die an das formatierte LaTeX-Ergebnis angehängt wird.
+        returnLaTex: Gibt zusätzlich die LaTeX-Formel und das formatierte
+            LaTeX-Ergebnis zurück.
+        correlation_matrix: Optionale Korrelationsmatrix der Eingangsgrößen.
+        print_output: Gibt Ergebnis, einzelne 1-sigma-Beiträge und LaTeX aus.
+
+    Returns:
+        Ohne ``returnLaTex`` das Tupel ``(Messwert, Standardunsicherheit)``.
+        Mit ``returnLaTex`` zusätzlich ``(LaTeX-Formel, LaTeX-Ergebnis)``.
+        Die numerischen Rückgabewerte sind ungerundet. Die LaTeX-Ausgabe
+        rundet die Unsicherheit auf eine signifikante Stelle (bei führender
+        1 oder 2 auf zwei) und den Wert auf dieselbe Nachkommastelle.
+
+    Verwendung:
+        Beispiel: Das Volumen eines Quaders wird aus Länge, Breite und Höhe
+        berechnet. Messwerte und Unsicherheiten müssen jeweils in derselben
+        Reihenfolge wie die Symbole übergeben werden:
+
+        >>> l, b, h = sp.symbols("l b h")
+        >>> V, dV, formel, ergebnis = gauss_error_values(
+        ...     l * b * h,
+        ...     [l, b, h],
+        ...     [12.0, 5.0, 2.0],
+        ...     [0.1, 0.1, 0.05],
+        ...     variable_name="V",
+        ...     unit=r"\,\mathrm{cm}^3",
+        ...     eqLabel="quader_volumen",
+        ...     returnLaTex=True,
+        ... )
+        >>> print(f"V = {V:.2f} cm^3, Standardunsicherheit = {dV:.2f} cm^3")
+        V = 120.00 cm^3, Standardunsicherheit = 3.97 cm^3
+
+        ``V`` und ``dV`` sind die ungerundeten numerischen Ergebnisse.
+        ``formel`` enthält die allgemeine Gaußsche Fehlerfortpflanzung und
+        ``ergebnis`` das für ein Protokoll formatierte LaTeX-Ergebnis. Die
+        Angabe von ``unit`` formatiert nur die Ausgabe; die Funktion prüft
+        keine Einheiten. Daher müssen alle Eingangsgrößen und Unsicherheiten
+        in zueinander passenden Einheiten angegeben sein. Ohne eine
+        Korrelationsmatrix behandelt die Funktion die Eingangsgrößen als
+        unkorreliert.
+
+    Raises:
+        TypeError: Wenn ein Eintrag in ``variables`` kein Sympy-Symbol ist.
+        ValueError: Wenn Eingaben unvereinbar, nicht endlich/reell oder eine
+            angegebene Korrelationsmatrix ungültig ist.
     """
     expression = sp.sympify(f)
     variables = list(variables)
@@ -318,6 +379,213 @@ def gauss_error_values(
         return f_value, error_value, latex_formula, latex_result
     return f_value, error_value
 
+
+def test_gauss_error_values():
+    """Prüft ``gauss_error_values`` unabhängig von Messdateien und Protokollen.
+
+    Die Referenzwerte werden aus bekannten Ableitungen und der Gaußschen
+    Fehlerfortpflanzung analytisch bestimmt. Es werden reguläre Fälle,
+    korrelierte Eingangsgrößen, Rückgabeformate und erwartete Eingabefehler
+    geprüft. Der Test ändert die geprüfte Funktion nicht: Alle Fehlschläge
+    werden gesammelt und am Ende gemeinsam als ``AssertionError`` gemeldet.
+
+    Aufruf im Python-Interpreter: ``Tools.test_gauss_error_values()``.
+    Ein problemloser Lauf endet ohne Ausnahme und gibt die Anzahl der
+    bestandenen Prüfungen aus.
+    """
+    fehler = []
+    bestanden = 0
+
+    def pruefe(name, test):
+        nonlocal bestanden
+        try:
+            test()
+        except Exception as error:
+            fehler.append(f"{name}: {type(error).__name__}: {error}")
+        else:
+            bestanden += 1
+
+    def nahe(actual, expected, beschreibung):
+        if not np.isclose(actual, expected, rtol=1e-12, atol=1e-14):
+            raise AssertionError(
+                f"{beschreibung}: erwartet {expected!r}, erhalten {actual!r}"
+            )
+
+    def erwartet_fehler(error_type, funktion, *args, **kwargs):
+        try:
+            funktion(*args, **kwargs)
+        except error_type:
+            return
+        except Exception as error:
+            raise AssertionError(
+                f"erwartet {error_type.__name__}, erhalten "
+                f"{type(error).__name__}: {error}"
+            ) from error
+        raise AssertionError(f"erwartet wurde {error_type.__name__}")
+
+    x, y, z = sp.symbols("x y z")
+
+    def linearer_fall():
+        wert, unsicherheit = gauss_error_values(3*x + 2, [x], [4], [0.2])
+        nahe(wert, 14, "Linearer Messwert")
+        nahe(unsicherheit, 0.6, "Lineare Unsicherheit")
+
+    pruefe("Lineare Funktion und Ableitung", linearer_fall)
+
+    def nichtlinearer_fall():
+        wert, unsicherheit = gauss_error_values(x**2, [x], [3], [0.1])
+        nahe(wert, 9, "Nichtlinearer Messwert")
+        nahe(unsicherheit, 0.6, "Nichtlineare Unsicherheit")
+
+    pruefe("Nichtlineare Funktion", nichtlinearer_fall)
+
+    def unabhaengige_eingangsfehler():
+        wert, unsicherheit = gauss_error_values(
+            x*y, [x, y], [3, 4], [0.1, 0.2]
+        )
+        nahe(wert, 12, "Produkt-Messwert")
+        nahe(unsicherheit, np.sqrt(0.52), "Quadratische Fehleraddition")
+
+    pruefe("Mehrere unkorrelierte Eingangsgrößen", unabhaengige_eingangsfehler)
+
+    def nullfehler_und_konstante():
+        wert, unsicherheit = gauss_error_values(
+            x + y, [x, y], [5, 7], [0, 0.2]
+        )
+        nahe(wert, 12, "Messwert mit Nullunsicherheit")
+        nahe(unsicherheit, 0.2, "Unsicherheit bei einem fehlerfreien Eingang")
+
+        konstante, konstante_unsicherheit = gauss_error_values(7, [], [], [])
+        nahe(konstante, 7, "Konstanter Ausdruck")
+        nahe(konstante_unsicherheit, 0, "Unsicherheit des konstanten Ausdrucks")
+
+    pruefe("Nullunsicherheit und konstante Funktion", nullfehler_und_konstante)
+
+    def positive_korrelation():
+        matrix = [[1, 0.5], [0.5, 1]]
+        wert, unsicherheit = gauss_error_values(
+            x + y, [x, y], [1, 2], [0.1, 0.2],
+            correlation_matrix=matrix,
+        )
+        nahe(wert, 3, "Messwert mit positiver Korrelation")
+        nahe(unsicherheit, np.sqrt(0.07), "Positive Kovarianz")
+
+    pruefe("Positive Korrelation", positive_korrelation)
+
+    def negative_korrelation():
+        matrix = [[1, -0.5], [-0.5, 1]]
+        _, unsicherheit = gauss_error_values(
+            x + y, [x, y], [1, 2], [0.1, 0.2],
+            correlation_matrix=matrix,
+        )
+        nahe(unsicherheit, np.sqrt(0.03), "Negative Kovarianz")
+
+    pruefe("Negative Korrelation", negative_korrelation)
+
+    def voll_korrelierte_eingaenge():
+        matrix = [[1, 1], [1, 1]]
+        _, unsicherheit = gauss_error_values(
+            x + y, [x, y], [1, 2], [0.1, 0.2],
+            correlation_matrix=matrix,
+        )
+        nahe(unsicherheit, 0.3, "Voll korrelierte Eingangsgrößen")
+
+    pruefe("Positiv semidefinite Korrelationsmatrix", voll_korrelierte_eingaenge)
+
+    def latex_rueckgabe():
+        rueckgabe = gauss_error_values(
+            x, [x], [12.345], [0.678],
+            eqLabel="test_label",
+            variable_name="R",
+            unit=r"\,\mathrm{m}",
+            returnLaTex=True,
+        )
+        if len(rueckgabe) != 4:
+            raise AssertionError(f"4 Rückgabewerte erwartet, erhalten: {len(rueckgabe)}")
+        wert, unsicherheit, formel, ergebnis = rueckgabe
+        nahe(wert, 12.345, "Ungerundeter LaTeX-Messwert")
+        nahe(unsicherheit, 0.678, "Ungerundete LaTeX-Unsicherheit")
+        if r"\label{eq:test_label}" not in formel:
+            raise AssertionError(f"Gleichungslabel fehlt: {formel}")
+        if "12{,}3" not in ergebnis or "0{,}7" not in ergebnis:
+            raise AssertionError(f"LaTeX-Rundung unerwartet: {ergebnis}")
+        if r"\,\mathrm{m}" not in ergebnis:
+            raise AssertionError(f"Einheit fehlt in LaTeX-Ausgabe: {ergebnis}")
+
+    pruefe("LaTeX-Rückgabe, Label, Einheit und Rundung", latex_rueckgabe)
+
+    pruefe(
+        "Ungleiche Listenlängen werden abgewiesen",
+        lambda: erwartet_fehler(
+            ValueError, gauss_error_values, x, [x], [1, 2], [0.1]
+        ),
+    )
+    pruefe(
+        "Doppelte Variablen werden abgewiesen",
+        lambda: erwartet_fehler(
+            ValueError, gauss_error_values, x, [x, x], [1, 2], [0.1, 0.2]
+        ),
+    )
+    pruefe(
+        "Nicht angegebene Symbole werden abgewiesen",
+        lambda: erwartet_fehler(
+            ValueError, gauss_error_values, x + y, [x], [1], [0.1]
+        ),
+    )
+    pruefe(
+        "Nicht-Sympy-Variablen werden abgewiesen",
+        lambda: erwartet_fehler(
+            TypeError, gauss_error_values, x, ["x"], [1], [0.1]
+        ),
+    )
+    pruefe(
+        "Negative Unsicherheiten werden abgewiesen",
+        lambda: erwartet_fehler(
+            ValueError, gauss_error_values, x, [x], [1], [-0.1]
+        ),
+    )
+    pruefe(
+        "Nicht-endliche Messwerte werden abgewiesen",
+        lambda: erwartet_fehler(
+            ValueError, gauss_error_values, x, [x], [np.inf], [0.1]
+        ),
+    )
+    pruefe(
+        "Falsche Korrelationsmatrix-Dimension wird abgewiesen",
+        lambda: erwartet_fehler(
+            ValueError, gauss_error_values, x + y, [x, y], [1, 2], [0.1, 0.2],
+            correlation_matrix=[[1]],
+        ),
+    )
+    pruefe(
+        "Asymmetrische Korrelationsmatrix wird abgewiesen",
+        lambda: erwartet_fehler(
+            ValueError, gauss_error_values, x + y, [x, y], [1, 2], [0.1, 0.2],
+            correlation_matrix=[[1, 0.2], [0.3, 1]],
+        ),
+    )
+    pruefe(
+        "Nicht positiv semidefinite Korrelationsmatrix wird abgewiesen",
+        lambda: erwartet_fehler(
+            ValueError, gauss_error_values, x + y + z, [x, y, z],
+            [1, 2, 3], [0.1, 0.2, 0.3],
+            correlation_matrix=[
+                [1, 0.9, 0.9],
+                [0.9, 1, -0.9],
+                [0.9, -0.9, 1],
+            ],
+        ),
+    )
+
+    print(
+        f"gauss_error_values: {bestanden} Prüfungen bestanden, "
+        f"{len(fehler)} fehlgeschlagen."
+    )
+    if fehler:
+        details = "\n".join(f"- {eintrag}" for eintrag in fehler)
+        raise AssertionError(f"Fehler in gauss_error_values:\n{details}")
+
+
 def zTest(Bestwert:float, Literaturwert:float, Standardunsicherheit:float, Einheit:str="", LaTexAusgabe=False):
     """
     Berechnet den z-Wert für die gegebenen Werte.
@@ -451,25 +719,5 @@ def Residuendiagramm_manuell(
 
 
 if __name__ == "__main__":
-    # anwendung von lade_versuch
-    daten, parameter = lade_versuch(
-        "reversionspendel.xlsx"
-    )
-    s = daten["Länge s [m]"].to_numpy()
-    messzeiten = daten[
-        ["T1 [s]", "T2 [s]", "T3 [s]", "T4 [s]", "T5 [s]"]
-    ].to_numpy()
-
-    # Fehlerfortpflanzung 
-    print("Fehler Gauss Test:")
-    h, k, d1, d2 = sp.symbols('h k d_1 d_2')
-    V = h*k*(d1+d2)/2
-    V1 = gauss_error_values(
-        V,
-        [h, k, d1, d2],
-        [5.07, 23.04, 34.4, 34.95],
-        [0.005, 0.005, 0.05, 0.05],
-        variable_name="V",
-        returnLaTex=True,
-        print_output=True
-    )
+    test_gauss_error_values()
+    
